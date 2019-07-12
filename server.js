@@ -1,13 +1,14 @@
 'use strict';
 
+// Load environment variables from .env file
+require('dotenv').config();
+
 // Application Dependencies
 const express = require('express');
 const superagent = require('superagent');
 const pg = require('pg');
 const cors = require('cors');
-
-// Load environment variables from .env file
-require('dotenv').config();
+const MOVIE_API_KEY = process.env.TMDB_API_KEY;
 
 // Application Setup
 const app = express();
@@ -24,6 +25,7 @@ client.on('error', err => console.error(err));
 app.get('/location', getLocation);
 app.get('/weather', getWeather);
 app.get('/events', getEvents);
+app.get('/movies', getMovies);
 
 // Make sure the server is listening for requests
 app.listen(PORT, () => console.log(`Listening on ${PORT}`));
@@ -89,12 +91,12 @@ Location.prototype = {
 };
 
 function Weather(day) {
-  this.tableName = 'weathers';
+  this.tableName = 'weather';
   this.forecast = day.summary;
   this.time = new Date(day.time * 1000).toString().slice(0, 15);
 }
 
-Weather.tableName = 'weathers';
+Weather.tableName = 'weather';
 Weather.lookup = lookup;
 
 Weather.prototype = {
@@ -126,6 +128,31 @@ Event.prototype = {
   }
 };
 
+
+//Constructor for movies 
+function Movie(movie) {
+  this.title = movie.title;
+  this.overview = movie.overview;
+  this.average_votes = movie.vote_average;
+  this.total_votes = movie.vote_count;
+  this.image_url = movie.poster_path;
+  this.popularity = movie.popularity;
+  this.released_on = movie.release_date;
+}
+
+Movie.tableName = 'movies';
+Movie.lookup = lookup;
+
+Movie.prototype = {
+  save: function (location_id) {
+    const SQL = `INSERT INTO ${this.tableName} (title, overview, average_votes, total_votes, image_url, popularity, released_on, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`;
+    const values = [this.title, this.overview, this.average_votes, this.total_votes, this.image_url, this.popularity, this.released_on, location_id];
+
+    client.query(SQL, values);
+  }
+};
+
+// Getter functions
 function getLocation(request, response) {
   Location.lookupLocation({
     tableName: Location.tableName,
@@ -137,9 +164,9 @@ function getLocation(request, response) {
     },
 
     cacheMiss: function () {
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${this.query}&key=${process.env.GEOCODE_API_KEY}`;
+      const geocodeURL = `https://maps.googleapis.com/maps/api/geocode/json?address=${this.query}&key=${process.env.GEOCODE_API_KEY}`;
 
-      return superagent.get(url)
+      return superagent.get(geocodeURL)
         .then(result => {
           const location = new Location(this.query, result);
           location.save()
@@ -161,9 +188,9 @@ function getWeather(request, response) {
     },
 
     cacheMiss: function () {
-      const url = `https://api.darksky.net/forecast/${process.env.WEATHER_API_KEY}/${request.query.data.latitude},${request.query.data.longitude}`;
+      const darkskyURL = `https://api.darksky.net/forecast/${process.env.DARKSKY_API_KEY}/${request.query.data.latitude},${request.query.data.longitude}`;
 
-      superagent.get(url)
+      superagent.get(darkskyURL)
         .then(result => {
           const weatherSummaries = result.body.daily.data.map(day => {
             const summary = new Weather(day);
@@ -188,9 +215,9 @@ function getEvents(request, response) {
     },
 
     cacheMiss: function () {
-      const url = `https://www.eventbriteapi.com/v3/events/search?token=${process.env.EVENTBRITE_API_KEY}&location.address=${request.query.data.formatted_query}`;
+      const eventbriteURL = `https://www.eventbriteapi.com/v3/events/search?token=${process.env.EVENTBRITE_API_KEY}&location.address=${request.query.data.formatted_query}`;
 
-      superagent.get(url)
+      superagent.get(eventbriteURL)
         .then(result => {
           const events = result.body.events.map(eventData => {
             const event = new Event(eventData);
@@ -199,6 +226,39 @@ function getEvents(request, response) {
           });
 
           response.send(events);
+        })
+        .catch(error => handleError(error, response));
+    }
+  });
+}
+
+function getMovies(request, response) {
+  Movie.lookup({
+    tableName: Movie.tableName,
+
+    location: request.query.data.id,
+
+    cacheHit: function (result) {
+      response.send(result.rows);
+    },
+
+    cacheMiss: function () {
+      const locationName = request.query.data.search_query;
+
+      const tmdbURL = `https://api.themoviedb.org/3/search/movie?api_key=${MOVIE_API_KEY}&language=en-US&query=${locationName}&page=1&include_adult=false`;
+
+      superagent.get(tmdbURL)
+        .then(result => {
+          // console.log('RESULT.BODY.RESULTS ARRAY: ', result.body.results);
+
+          const movies = result.body.results.map(movieData => {
+            const movie = new Movie(movieData);
+
+            console.log('MOVIES: ', movie);
+            movie.save(request.query.data.id);
+            return movie;
+          });
+          response.send(movies);
         })
         .catch(error => handleError(error, response));
     }
