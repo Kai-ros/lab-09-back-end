@@ -9,6 +9,7 @@ const superagent = require('superagent');
 const pg = require('pg');
 const cors = require('cors');
 const MOVIE_API_KEY = process.env.TMDB_API_KEY;
+const YELP_API_KEY = process.env.YELP_API_KEY;
 
 // Application Setup
 const app = express();
@@ -135,7 +136,7 @@ function Movie(movie) {
   this.overview = movie.overview;
   this.average_votes = movie.vote_average;
   this.total_votes = movie.vote_count;
-  this.image_url = movie.poster_path;
+  this.image_url = 'https://image.tmdb.org/t/p/w500' + movie.poster_path;
   this.popularity = movie.popularity;
   this.released_on = movie.release_date;
 }
@@ -147,6 +148,27 @@ Movie.prototype = {
   save: function (location_id) {
     const SQL = `INSERT INTO ${this.tableName} (title, overview, average_votes, total_votes, image_url, popularity, released_on, location_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);`;
     const values = [this.title, this.overview, this.average_votes, this.total_votes, this.image_url, this.popularity, this.released_on, location_id];
+
+    client.query(SQL, values);
+  }
+};
+
+//Constructor for Yelp
+function Yelp(yelp){
+  this.name = yelp.name;
+  this.image_url = yelp.image_url;
+  this.price = yelp.price;
+  this.rating = yelp.rating;
+  this.url = yelp.url;
+}
+
+Yelp.tableName = 'yelps';
+Yelp.lookup = lookup;
+
+Yelp.prototype = {
+  save: function (location_id) {
+    const SQL = `INSERT INTO ${this.tableName} (name, image_url, price, rating,url, location_id) VALUES ($1, $2, $3, $4, $5);`;
+    const values = [this.name, this.image_url, this.price, this.rating, this.url, location_id];
 
     client.query(SQL, values);
   }
@@ -259,6 +281,39 @@ function getMovies(request, response) {
             return movie;
           });
           response.send(movies);
+        })
+        .catch(error => handleError(error, response));
+    }
+  });
+}
+
+
+function getYelp(request, response) {
+  Movie.lookup({
+    tableName: Yelp.tableName,
+
+    location: request.query.data.id,
+
+    cacheHit: function (result) {
+      response.send(result.rows);
+    },
+
+    cacheMiss: function () {
+      const locationName = request.query.data.search_query;
+
+      const yelpURL = `https://api.yelp.com/v3/events/${MOVIE_API_KEY}`;
+      superagent.get(yelpURL)
+        .then(result => {
+          // console.log('RESULT.BODY.RESULTS ARRAY: ', result.body.results);
+
+          const yelps = result.body.results.map(yelpData => {
+            const yelp = new Yelp(yelpData);
+
+            console.log('MOVIES: ', movie);
+            yelp.save(request.query.data.id);
+            return yelp;
+          });
+          response.send(yelps);
         })
         .catch(error => handleError(error, response));
     }

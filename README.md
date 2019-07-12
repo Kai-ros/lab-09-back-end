@@ -8,8 +8,8 @@ Create an app to generate lat and long for a specific location as defined by nam
 The user should only have to open up the app on the internet and enter the name of a location.  Our app will then return lat and long, as well as weather data or inform the user that they have entered invalid information.
 
 ## Architecture
-- JavaScript, JQuery
-- API: Google geocoding and DarkSky
+- JavaScript, JQuery, SQL, Postgres, Express
+- API: Google geocoding and DarkSky and Eventbrite and TMDB and Yelp
 - Heroku
 
 ## Change Log
@@ -37,8 +37,11 @@ Day 1 Team Credits: Brandon Hurrington, Chris Coulon, Joachen Busch
 Day 2 Help Collaborators: Steve Grant
 Day 2 Team Credits: Brandon Hurrington, Renee Messick
 
-Day 3 Help Collaborators: 
+Day 3 Help Collaborators: Trevor Dobson and Steve Grant and Travis Cox
 Day 3 Team Credits: Brandon Hurrington, Promila Tamang
+
+Day 4 Help Collaborators: Steve Grant and Chris Coulon
+Day 4 Team Credits: Brandon Hurrington, Sapana Poudel
 
 
 # Lab-06
@@ -168,29 +171,57 @@ Driver: Renee
 Navigator: Renee
 
 # Lab-08
-Number and name of feature: Feature 1: Database Setup
+Number and name of feature: Feature 1: Database
 
-Estimate of time needed to complete: 0:30
+Estimate of time needed to complete: 3 hours
 
-Start time: 9:30
+Start time: 9:00am
 
-Finish time: 10:00
+Finish time: 11:00am
 
-Actual time needed to complete:  30 minutes
+Actual time needed to complete:  2 hours
 
 Driver: Promila
 Navigator: Brandon
 
 # Lab-08
-Number and name of feature: Feature 1: Server code workflow
+Number and name of feature: Feature 2: Server 
 
-Estimate of time needed to complete: 1:00
+Estimate of time needed to complete: 4 hours
 
-Start time: 10:30
+Start time: 11:00am
 
-Finish time: 
+Finish time: 2:00pm
 
-Actual time needed to complete:  ?? minutes
+Actual time needed to complete:  3 hours
 
-Driver: Promila
+Driver: Brandon
+Navigator: Promila
+
+# Lab-09
+Number and name of feature: Feature 1: TMDB Lookup
+
+Estimate of time needed to complete: 3 hours
+
+Start time: 9:30am
+
+Finish time: 11:30am
+
+Actual time needed to complete:  2 hours
+
+Driver: Brandon
+Navigator: Sapana
+
+# Lab-09
+Number and name of feature: Feature 1: Yelp Lookup
+
+Estimate of time needed to complete: 1 hour
+
+Start time: 11:30am
+
+Finish time: ??
+
+Actual time needed to complete:  ??
+
+Driver: Sapana
 Navigator: Brandon
